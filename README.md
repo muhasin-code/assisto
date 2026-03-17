@@ -99,7 +99,7 @@ assisto-flask/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/assisto-flask.git
+git clone https://github.com/muhasin-code/assisto.git
 cd assisto-flask
 ```
 
