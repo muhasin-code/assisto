@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="header mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="display-5 fw-bold text-white">Alert Log</h1>
+        <p class="lead text-muted">Historical log of all sensor-triggered alerts for <span class="text-primary">{{ wheelchair[2] }}</span></p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+                <thead class="bg-darker">
+                    <tr>
+                        <th class="ps-4 py-3">Timestamp</th>
+                        <th class="py-3">Type</th>
+                        <th class="py-3">Message</th>
+                        <th class="py-3 text-center">Severity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td class="ps-4 py-3">{{ alert[2].replace('T', ' ').split('.')[0] }}</td>
+                        <td class="py-3"><span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25">{{ alert[3] }}</span></td>
+                        <td class="py-3 text-white-50">{{ alert[4] }}</td>
+                        <td class="py-3 text-center">
+                            {% if alert[5] == 'CRITICAL' %}
+                            <span class="badge bg-danger rounded-pill px-3 shadow-sm">CRITICAL</span>
+                            {% else %}
+                            <span class="badge bg-warning rounded-pill px-3 shadow-sm text-dark">{{ alert[5] }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted">
+                            <i class="fas fa-check-circle fs-1 mb-3 d-block"></i>
+                            No alerts recorded for this device.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

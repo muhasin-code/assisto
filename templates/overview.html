@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Live Map -->
+    <div class="col-lg-8">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-body p-0 position-relative">
+                <div id="map" style="height: 500px; z-index: 1;"></div>
+                <div class="position-absolute top-0 end-0 m-3 d-flex gap-2" style="z-index: 1000;">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm"><i class="fas fa-gauge-high me-2"></i><span id="speed">0</span> km/h</span>
+                    <span class="badge bg-success px-3 py-2 rounded-pill shadow-sm"><i class="fas fa-signal me-2"></i><span id="signal">Live</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Summary -->
+    <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-heartbeat text-danger me-2"></i>Current Vitals</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Heart Rate</span>
+                        <span class="fw-bold"><span id="heart_rate">0</span> BPM</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 8px;">
+                        <div class="progress-bar bg-danger" id="hr-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Blood Oxygen (SpO₂)</span>
+                        <span class="fw-bold"><span id="spo2">0</span> %</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 8px;">
+                        <div class="progress-bar bg-info" id="spo2-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Body Temp</span>
+                        <span class="fw-bold"><span id="temp">36.5</span> °C</span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 8px;">
+                        <div class="progress-bar bg-warning" id="temp-bar" style="width: 73%"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 p-3 rounded-4 bg-dark text-center shadow-sm">
+                    <div class="text-white-50 small mb-1">Active Wheelchair</div>
+                    <div class="fw-bold text-primary">{{ wheelchair[2] }}</div>
+                    <div class="smaller text-white-50 mt-1">{{ wheelchair[1] }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent History -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-route text-primary me-2"></i>Recent Activity</h5>
+                <a href="/trip_history" class="btn btn-sm btn-outline-primary rounded-pill">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover border-transparent">
+                        <thead class="text-muted small">
+                            <tr><th>Time</th><th>Position</th><th>Heart Rate</th><th>Status</th></tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for entry in recent_history %}
+                                <tr>
+                                    <td>{{ entry[2].split('T')[1].split('.')[0] }}</td>
+                                    <td>{{ entry[3] }}, {{ entry[4] }}</td>
+                                    <td>{{ entry[6] }} BPM</td>
+                                    <td><span class="badge bg-opacity-25 bg-success text-success rounded-pill">Normal</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        // ─── Map Setup ────────────────────────────────────────────
+        var map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([10.9348, 76.0022], 15);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        var customIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:#6366f1; width:15px; height:15px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px #6366f1;'></div>",
+            iconSize: [15, 15],
+            iconAnchor: [7, 7]
+        });
+
+        var marker = L.marker([10.9348, 76.0022], {icon: customIcon}).addTo(map);
+
+        // ─── WebSocket listener (driven by global socket in base.html) ─
+        window.addEventListener('esp_data', (e) => {
+            const { key, value } = e.detail;
+
+            if (key === 'heartrate') {
+                const bpm = parseInt(value);
+                document.getElementById('heart_rate').innerText = bpm;
+                document.getElementById('hr-bar').style.width = `${Math.min((bpm / 150) * 100, 100)}%`;
+            }
+
+            if (key === 'location') {
+                const parts = value.split(',');
+                if (parts.length === 2) {
+                    const lat = parseFloat(parts[0]);
+                    const lng = parseFloat(parts[1]);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        marker.setLatLng([lat, lng]);
+                        map.panTo([lat, lng]);
+                    }
+                }
+            }
+
+            if (key === 'status') {
+                // "status:rssi,ip" — show RSSI in signal badge
+                const rssi = value.split(',')[0];
+                const signalEl = document.getElementById('signal');
+                if (signalEl) signalEl.innerText = `${rssi} dBm`;
+            }
+        });
+    </script>
+{% endblock %}

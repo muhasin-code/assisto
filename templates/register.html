@@ -1,0 +1,105 @@
+{% extends 'base.html' %} {% block content %}
+<div
+  class="container d-flex justify-content-center align-items-center"
+  style="min-height: 80vh"
+>
+  <div
+    class="card p-4 shadow-lg border-0"
+    style="
+      width: 100%;
+      max-width: 450px;
+      background: rgba(27, 38, 59, 0.85);
+      backdrop-filter: blur(10px);
+    "
+  >
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-white">
+        <i class="fas fa-user-plus me-2 text-primary"></i>Create Account
+      </h2>
+      <p class="text-muted small">
+        Bind your Assisto Wheelchair to get started
+      </p>
+    </div>
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label text-light small fw-bold">Username</label>
+        <div class="input-group">
+          <span class="input-group-text bg-dark border-0 text-primary"
+            ><i class="fas fa-user"></i
+          ></span>
+          <input
+            type="text"
+            class="form-control"
+            name="username"
+            placeholder="Choose a username"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-light small fw-bold">Email Address</label>
+        <div class="input-group">
+          <span class="input-group-text bg-dark border-0 text-primary"
+            ><i class="fas fa-envelope"></i
+          ></span>
+          <input
+            type="email"
+            class="form-control"
+            name="email"
+            placeholder="email@example.com"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label text-light small fw-bold"
+          >Wheelchair Unique ID</label
+        >
+        <div class="input-group">
+          <span class="input-group-text bg-dark border-0 text-primary"
+            ><i class="fas fa-id-card"></i
+          ></span>
+          <input
+            type="text"
+            class="form-control"
+            name="wheelchair_id"
+            placeholder="e.g. ASSISTO-001"
+            required
+          />
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label text-light small fw-bold">Password</label>
+        <div class="input-group">
+          <span class="input-group-text bg-dark border-0 text-primary"
+            ><i class="fas fa-lock"></i
+          ></span>
+          <input
+            type="password"
+            class="form-control"
+            name="password"
+            placeholder="Create a password"
+            required
+          />
+        </div>
+      </div>
+      <button
+        type="submit"
+        class="btn btn-primary w-100 fw-bold py-2 shadow-sm"
+      >
+        <i class="fas fa-check-circle me-2"></i>Register & Bind Device
+      </button>
+    </form>
+    <div class="text-center mt-4">
+      <p class="mb-0 text-muted small">
+        Already have an account?
+        <a
+          href="{{ url_for('login') }}"
+          class="text-primary text-decoration-none fw-bold"
+          >Login here</a
+        >
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

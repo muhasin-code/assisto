@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 text-center">
+                <div class="bg-warning bg-opacity-10 text-warning d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-sliders fs-3"></i>
+                </div>
+                <h5 class="fw-bold mb-0 text-white">System Configuration</h5>
+                <p class="text-muted small">Manage your wheelchair settings and preferences</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-4">
+                        <label class="form-label text-muted smaller fw-bold text-uppercase">Wheelchair Label</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-dark border-0 text-muted"><i class="fas fa-tag"></i></span>
+                            <input type="text" class="form-control" name="name" value="{{ wheelchairs[0][3] if wheelchairs else 'My Wheelchair' }}" placeholder="Give it a name">
+                        </div>
+                    </div>
+                    
+
+                    <div class="p-3 bg-dark rounded-4 mb-4 border border-white border-opacity-5">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Bound Device ID</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25">{{ wheelchairs[0][1] if wheelchairs else 'Not Bound' }}</span>
+                        </div>
+                        <div class="smaller text-muted">This device is uniquely linked to your account and cannot be changed without administrator assistance.</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                        <i class="fas fa-save me-2"></i>Save Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <p class="text-muted small">Looking for technical support? <a href="#" class="text-primary text-decoration-none">Contact helpdesk</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

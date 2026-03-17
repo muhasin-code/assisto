@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 text-center">
+                <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-circle mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-heartbeat fs-3"></i>
+                </div>
+                <h6 class="text-white-50 small fw-bold text-uppercase">Current Heart Rate</h6>
+                <h2 class="fw-bold mb-0 text-white"><span id="heart_rate">--</span> <small class="fs-6 fw-normal text-white-50">BPM</small></h2>
+            </div>
+        </div>
+        
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-white"><i class="fas fa-chart-line text-primary me-2"></i>Live Vitals Monitor</h5>
+                <span class="badge bg-success bg-opacity-25 text-success rounded-pill">Collecting Data</span>
+            </div>
+            <div class="card-body p-4">
+                <div style="height: 400px;">
+                    <canvas id="vitalsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ─── Seed chart with server-side history ──────────────────────
+    const ctx = document.getElementById('vitalsChart').getContext('2d');
+    const healthHistory  = {{ history | tojson | safe }};
+    const initialLabels  = healthHistory.map(row => row[0].split('T')[1].split('.')[0]);
+    const initialHR      = healthHistory.map(row => row[1]);
+
+    var vitalsChart = window.vitalsChartInstance;
+    if (vitalsChart) { vitalsChart.destroy(); }
+    
+    window.vitalsChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: initialLabels,
+            datasets: [{
+                label: 'Heart Rate (BPM)',
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                data: initialHR,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 200 },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#e5e7eb', font: { family: 'Outfit' } }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#d1d5db' }
+                },
+                y: {
+                    min: 40,
+                    max: 160,
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    ticks: { color: '#d1d5db' }
+                }
+            }
+        }
+    });
+
+    // ─── Real-time updates via WebSocket ──────────────────────────
+    if (window.handleHealthVitalsData) {
+        window.removeEventListener('esp_data', window.handleHealthVitalsData);
+    }
+
+    window.handleHealthVitalsData = (e) => {
+        const { key, value } = e.detail;
+
+        if (key === 'heartrate') {
+            const bpm     = parseInt(value);
+            const timeStr = new Date().toLocaleTimeString();
+
+            // Update the live BPM display card
+            const hrEl = document.getElementById('heart_rate');
+            if (hrEl) hrEl.innerText = bpm;
+
+            // Append to chart, cap at 30 points
+            if (window.vitalsChartInstance) {
+                if (window.vitalsChartInstance.data.labels.length >= 30) {
+                    window.vitalsChartInstance.data.labels.shift();
+                    window.vitalsChartInstance.data.datasets[0].data.shift();
+                }
+                window.vitalsChartInstance.data.labels.push(timeStr);
+                window.vitalsChartInstance.data.datasets[0].data.push(bpm);
+                window.vitalsChartInstance.update();
+            }
+        }
+    };
+
+    window.addEventListener('esp_data', window.handleHealthVitalsData);
+</script>
+{% endblock %}

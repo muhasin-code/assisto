@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="card-body p-0 position-relative">
+        <div id="map" style="height: calc(100vh - 200px); min-height: 500px; z-index: 1;"></div>
+        
+        <!-- Overlay HUD -->
+        <div class="position-absolute top-0 start-0 m-4 d-flex flex-column gap-3" style="z-index: 1000;">
+            <div class="glass-hud p-4 rounded-4 shadow-lg border border-white border-opacity-20" style="background: rgba(10, 15, 25, 0.95); backdrop-filter: blur(20px);">
+                <h6 class="text-primary smaller fw-bold mb-3 text-uppercase"><i class="fas fa-location-dot me-2"></i>Live Tracking HUD</h6>
+                
+                <div class="d-flex align-items-center gap-4 mb-3">
+                    <div class="text-center">
+                        <div class="text-white-50 smaller mb-1">Speed</div>
+                        <div class="h4 fw-bold mb-0 text-white"><span id="speed">0.0</span></div>
+                        <div class="smaller text-white-50">km/h</div>
+                    </div>
+                    <div class="vr bg-white opacity-20"></div>
+                    <div class="text-center">
+                        <div class="text-white-50 smaller mb-1">Signal</div>
+                        <div class="h4 fw-bold mb-0 text-success"><i class="fas fa-wifi small"></i> <span id="signal">LTE</span></div>
+                        <div class="smaller text-white-50">Active</div>
+                    </div>
+                </div>
+
+                <div class="p-2 bg-dark rounded-3 smaller text-white-50 mb-0">
+                    <i class="fas fa-clock me-2 text-primary"></i>Last update: <span id="last-update-time">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Overlay -->
+        <div class="position-absolute bottom-0 end-0 m-4 d-flex flex-column gap-2" style="z-index: 1000;">
+            <button class="btn btn-dark rounded-circle shadow-lg" onclick="map.zoomIn()" style="width: 45px; height: 45px;"><i class="fas fa-plus"></i></button>
+            <button class="btn btn-dark rounded-circle shadow-lg" onclick="map.zoomOut()" style="width: 45px; height: 45px;"><i class="fas fa-minus"></i></button>
+            <button class="btn btn-primary rounded-circle shadow-lg mt-2" onclick="recenterMap()" style="width: 45px; height: 45px;"><i class="fas fa-crosshairs"></i></button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ─── Map Setup ────────────────────────────────────────────────
+    if (window.mapInstance) { window.mapInstance.remove(); }
+    window.mapInstance = L.map('map', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([10.9348, 76.0022], 16);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(window.mapInstance);
+
+    // Force redraw for soft-nav
+    setTimeout(() => window.mapInstance.invalidateSize(), 500);
+
+    var customIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:#6366f1; width:20px; height:20px; border-radius:50%; border:4px solid white; box-shadow:0 0 15px #6366f1;'></div>",
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    });
+
+    var marker   = L.marker([10.9348, 76.0022], {icon: customIcon}).addTo(window.mapInstance);
+    var livePath = L.polyline([], {color: '#6366f1', weight: 4, opacity: 0.6}).addTo(window.mapInstance);
+
+    function recenterMap() {
+        if (marker) window.mapInstance.panTo(marker.getLatLng());
+    }
+
+    // ─── WebSocket listener for live location ─────────────────────
+    if (window.handleLiveTrackingData) {
+        window.removeEventListener('esp_data', window.handleLiveTrackingData);
+    }
+
+    window.handleLiveTrackingData = (e) => {
+        const { key, value } = e.detail;
+
+        if (key === 'location') {
+            const parts = value.split(',');
+            if (parts.length === 2) {
+                const lat = parseFloat(parts[0]);
+                const lng = parseFloat(parts[1]);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    const newPos = [lat, lng];
+                    marker.setLatLng(newPos);
+                    livePath.addLatLng(newPos);
+                    document.getElementById('last-update-time').innerText = new Date().toLocaleTimeString();
+                }
+            }
+        }
+
+        if (key === 'status') {
+            const rssi = value.split(',')[0];
+            const signalEl = document.getElementById('signal');
+            if (signalEl) signalEl.innerText = `${rssi} dBm`;
+        }
+    };
+
+    window.addEventListener('esp_data', window.handleLiveTrackingData);
+</script>
+{% endblock %}

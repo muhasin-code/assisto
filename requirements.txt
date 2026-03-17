@@ -1,0 +1,8 @@
+flask
+flask-login
+werkzeug
+flask-socketio
+python-socketio[client]
+eventlet
+websocket-client
+websockets

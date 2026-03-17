@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/command_center.css') }}">
+
+<div class="command-center">
+    <!-- Fall Alert Banner -->
+    <div id="cc-fall-alert-banner" class="cc-fall-banner d-none" style="border-radius: 12px;">
+        <div class="d-flex align-items-center justify-content-center gap-3">
+            <i class="fas fa-person-falling fa-lg"></i>
+            <span>⚠ FALL DETECTED! Immediate attention required!</span>
+            <button id="cc-dismiss-fall-alert" class="btn btn-sm btn-light rounded-pill" aria-label="Dismiss">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="cc-dashboard">
+        <!-- Row 1: Status + Heart Rate + Emergency -->
+        <div class="cc-row cc-row-top">
+            <!-- Device Status Card -->
+            <section class="cc-card">
+                <div class="cc-card-header">
+                    <div class="cc-card-icon cc-status-icon"><i class="fas fa-wifi"></i></div>
+                    <h2>Device Status</h2>
+                </div>
+                <div class="cc-card-body">
+                    <div id="cc-device-status" class="cc-big-status offline">
+                        <div class="cc-status-ring">
+                            <div class="cc-status-ring-inner"></div>
+                        </div>
+                        <span id="cc-status-label" class="cc-status-label">OFFLINE</span>
+                    </div>
+                    
+                    <!-- Moved Connection Interface -->
+                    <div class="mt-4 p-3 rounded-4 bg-dark bg-opacity-50 border border-secondary border-opacity-25">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span id="device-status-dot" class="status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #6b7280;"></span>
+                            <span id="device-status-label" class="small text-muted">Offline</span>
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="text" id="esp-ip-input" class="form-control form-control-sm bg-black border-secondary text-white" placeholder="ESP32 IP:port" value="{{ esp_ip if esp_ip else '' }}">
+                            <button id="btn-toggle-bridge" class="btn btn-primary btn-sm px-3" type="button" onclick="toggleBridge()">Connect</button>
+                        </div>
+                        <div class="smaller text-muted d-flex align-items-center gap-2">
+                            <i class="fas fa-circle-notch fa-spin d-none" id="bridge-loading"></i>
+                            <span id="bridge-status-label">Ready to connect</span>
+                        </div>
+                    </div>
+
+                    <div class="cc-status-details mt-3">
+                        <div class="cc-detail-item">
+                            <span class="cc-detail-label">Signal</span>
+                            <span id="cc-signal-value" class="cc-detail-value">-- dBm</span>
+                        </div>
+                        <div class="cc-detail-item">
+                            <span class="cc-detail-label">IP Address</span>
+                            <span id="cc-ip-value" class="cc-detail-value">---.---.---.---</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Heart Rate Card -->
+            <section class="cc-card">
+                <div class="cc-card-header">
+                    <div class="cc-card-icon cc-heartrate-icon"><i class="fas fa-heartbeat"></i></div>
+                    <h2>Heart Rate Monitor</h2>
+                </div>
+                <div class="cc-card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <span id="cc-hr-value" class="cc-hr-value">--</span>
+                            <span class="text-muted small ms-1">BPM</span>
+                        </div>
+                        <div id="cc-hr-status-badge" class="cc-hr-status normal">Normal</div>
+                    </div>
+                    <canvas id="cc-hr-chart" class="cc-hr-chart w-100"></canvas>
+                    
+
+                    <div class="d-flex justify-content-between gap-2 mt-3">
+                        <div class="text-center flex-fill bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Min</div>
+                            <div id="cc-hr-min" class="fw-bold">--</div>
+                        </div>
+                        <div class="text-center flex-fill bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Avg</div>
+                            <div id="cc-hr-avg" class="fw-bold">--</div>
+                        </div>
+                        <div class="text-center flex-fill bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Max</div>
+                            <div id="cc-hr-max" class="fw-bold">--</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Emergency & Fall Card -->
+            <section class="cc-card cc-card-emergency">
+                <div class="cc-card-header">
+                    <div class="cc-card-icon cc-emergency-icon"><i class="fas fa-shield-halved"></i></div>
+                    <h2>Emergency Control</h2>
+                </div>
+                <div class="cc-card-body text-center">
+                    <div class="d-flex gap-2 justify-content-center mb-3">
+                        <button id="btn-emergency-stop" onclick="sendEmergency('stop')" class="btn btn-danger btn-lg flex-fill py-3 fw-bold rounded-4 shadow-sm">
+                            <i class="fas fa-hand-paper me-2"></i> STOP
+                        </button>
+                        <button id="btn-emergency-release" onclick="sendEmergency('release')" class="btn btn-success btn-lg flex-fill py-3 fw-bold rounded-4 shadow-sm" disabled>
+                            <i class="fas fa-play me-2"></i> RELEASE
+                        </button>
+                    </div>
+                    <p class="small text-muted mb-4">Manual override for wheelchair movement</p>
+
+                    <div class="border-top border-secondary border-opacity-25 pt-4">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Fall Detection System</h6>
+                        <div id="cc-fall-status" class="cc-fall-indicator safe">
+                            <div id="cc-fall-icon-wrap" class="cc-fall-icon-wrap">
+                                <i class="fas fa-person-walking"></i>
+                            </div>
+                            <span id="cc-fall-label" class="cc-fall-label">No Fall Detected</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Row 2: Messages + Map -->
+        <div class="cc-row cc-row-bottom">
+            <!-- Messages Card -->
+            <section class="cc-card">
+                <div class="cc-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="cc-card-icon cc-message-icon"><i class="fas fa-terminal"></i></div>
+                        <h2 class="mb-0">Device Messages</h2>
+                    </div>
+                    <button id="cc-clear-messages-btn" class="btn btn-sm btn-outline-secondary" title="Clear Messages">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+                <div class="cc-card-body p-0">
+                    <div id="cc-messages-container" class="cc-messages-list">
+                        <div class="cc-message-placeholder text-center text-muted py-5">
+                            <i class="fas fa-satellite-dish fa-3x mb-3 d-block"></i>
+                            <p>Waiting for ESP32 messages...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 border-top border-secondary">
+                    <div class="input-group">
+                        <input type="text" id="cc-send-message-input" class="form-control bg-dark border-secondary text-white" placeholder="Send command to ESP32..." aria-label="Command">
+                        <button id="cc-send-message-btn" class="btn btn-primary" aria-label="Send">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Map Card -->
+            <section class="cc-card">
+                <div class="cc-card-header">
+                    <div class="cc-card-icon cc-map-icon"><i class="fas fa-location-dot"></i></div>
+                    <h2>GPS Location Tracker</h2>
+                </div>
+                <div class="cc-card-body">
+                    <div id="cc-leaflet-map" class="cc-map-container"></div>
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        <div class="flex-fill text-center bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Latitude</div>
+                            <div id="cc-coord-x" class="fw-bold text-info">0.000000</div>
+                        </div>
+                        <div class="flex-fill text-center bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Longitude</div>
+                            <div id="cc-coord-y" class="fw-bold text-info">0.000000</div>
+                        </div>
+                        <div class="flex-fill text-center bg-dark bg-opacity-25 rounded p-2">
+                            <div class="small text-muted">Last Update</div>
+                            <div id="cc-coord-time" class="fw-bold">--:--:--</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Row 3: Recent Activity (Integrated from Dashboard) -->
+        <div class="cc-row">
+            <section class="cc-card w-100">
+                <div class="cc-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="cc-card-icon cc-history-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fas fa-clock-rotate-left"></i></div>
+                        <h2 class="mb-0">Recent Activity</h2>
+                    </div>
+                    <a href="/trip_history" class="btn btn-sm btn-outline-primary rounded-pill px-3">View All Trips</a>
+                </div>
+                <div class="cc-card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0 border-transparent">
+                            <thead class="text-muted smaller text-uppercase">
+                                <tr><th>Time</th><th>Position</th><th>Heart Rate</th><th>Status</th></tr>
+                            </thead>
+                            <tbody class="small">
+                                {% for entry in recent_history %}
+                                    <tr>
+                                        <td class="text-white-50">{{ entry[2].split('T')[1].split('.')[0] }}</td>
+                                        <td>
+                                            {% if entry[3] is not none and entry[4] is not none %}
+                                                {{ "%.4f"|format(entry[3]) }}, {{ "%.4f"|format(entry[4]) }}
+                                            {% else %}
+                                                <span class="text-muted smaller">No GPS</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><span class="fw-bold text-danger">{{ entry[6] }}</span> <span class="smaller opacity-50">BPM</span></td>
+                                        <td><span class="badge bg-opacity-25 bg-success text-success rounded-pill px-2">Normal</span></td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="4" class="text-center py-4 text-muted small">No recent sensor data recorded.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Demo Mode Button (floating) -->
+    <div class="position-fixed bottom-0 end-0 m-4" style="z-index: 100;">
+        <button id="cc-ws-demo-btn" class="btn btn-outline-info btn-sm rounded-pill shadow">
+            <i class="fas fa-play me-1"></i> Demo Mode
+        </button>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="cc-toast-container" class="position-fixed bottom-0 end-0 m-4" style="z-index: 2000;"></div>
+</div>
+
+<style>
+.heartbeat-anim { animation: ccHeartbeat 0.8s ease-in-out; }
+@keyframes ccHeartbeat {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.15); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.1); }
+    60% { transform: scale(1); }
+}
+.leaflet-marker-pulse {
+    width: 16px; height: 16px;
+    background: #22d3ee;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5);
+}
+.leaflet-marker-pulse::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border: 2px solid rgba(34, 211, 238, 0.4);
+    border-radius: 50%;
+    animation: ccMarkerPulse 2s ease-out infinite;
+}
+@keyframes ccMarkerPulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+.cc-fall-icon-wrap { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+.cc-fall-indicator.safe .cc-fall-icon-wrap { background: rgba(52, 211, 153, 0.12); color: #34d399; }
+.cc-fall-indicator.danger .cc-fall-icon-wrap { background: rgba(244, 63, 94, 0.15); color: #f43f5e; }
+.cc-message-time { font-size: 0.72rem; color: var(--cc-text-muted); margin-right: 8px; }
+.toast-success { background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); color: #34d399; }
+.toast-error { background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #f43f5e; }
+.toast-warning { background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3); color: #fb923c; }
+.toast-info { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #6366f1; }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

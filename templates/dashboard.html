@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Assisto Monitoring Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-slate-100">
+
+
+<div class="flex min-h-screen">
+
+
+<!-- Sidebar -->
+<aside class="w-64 bg-slate-900 text-white p-6">
+<div class="text-2xl font-bold mb-8">Assisto</div>
+<nav class="space-y-4">
+<a class="block px-4 py-2 rounded bg-blue-600">Live Tracking</a>
+<a class="block px-4 py-2 hover:bg-slate-700 rounded">Overview</a>
+<a class="block px-4 py-2 hover:bg-slate-700 rounded">Health Vitals</a>
+<a class="block px-4 py-2 hover:bg-slate-700 rounded">Trip History</a>
+<a class="block px-4 py-2 hover:bg-slate-700 rounded">Configuration</a>
+</nav>
+<div class="mt-10 text-sm opacity-70">Caretaker Admin</div>
+</aside>
+
+
+<!-- Main -->
+<main class="flex-1 p-8">
+
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+<div>
+<h1 class="text-3xl font-bold">Tracking Dashboard</h1>
+<p class="text-gray-500">Monitoring active session for Assisto Alpha</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-slate-800 text-white px-4 py-2 rounded">Call Assisto</button>
+<button class="bg-red-600 text-white px-4 py-2 rounded">SOS</button>
+</div>
+</div>
+
+
+<!-- Stats -->
+<div class="grid grid-cols-4 gap-6 mb-6">
+<div class="bg-white p-5 rounded shadow">
+<p class="text-gray-500">Heart Rate</p>
+<p class="text-2xl font-bold">{{ data.heart_rate }} BPM</p>
+</div>
+<div class="bg-white p-5 rounded shadow">
+<p class="text-gray-500">Speed</p>
+<p class="text-2xl font-bold">{{ data.speed }}</p>
+</div>
+<div class="bg-white p-5 rounded shadow">
+<p class="text-gray-500">Battery</p>
+<p class="text-2xl font-bold">{{ data.battery }}%</p>
+</div>
+<div class="bg-white p-5 rounded shadow">
+<p class="text-gray-500">System</p>
+<p class="text-2xl font-bold text-green-600">{{ data.system }}</p>
+</div>
+</div>
+
+
+<!-- Map Card -->
+</html>

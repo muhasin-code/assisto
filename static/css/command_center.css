@@ -1,0 +1,317 @@
+/* =============================================
+   ESP32 Command Center — Design System
+   Integrated into Assisto Flask
+   ============================================= */
+
+.command-center {
+    --cc-bg-card: rgba(17, 24, 39, 0.7);
+    --cc-bg-card-border: rgba(99, 102, 241, 0.15);
+    --cc-accent-blue: #6366f1;
+    --cc-accent-cyan: #22d3ee;
+    --cc-accent-green: #34d399;
+    --cc-accent-red: #f43f5e;
+    --cc-accent-orange: #fb923c;
+    --cc-text-primary: #f1f5f9;
+    --cc-text-muted: #64748b;
+    --cc-space-md: 16px;
+    --cc-space-lg: 24px;
+    --cc-radius-md: 12px;
+    --cc-radius-xl: 20px;
+}
+
+/* Dashboard grid for command center */
+.command-center .cc-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cc-space-lg);
+}
+
+.command-center .cc-row {
+    display: grid;
+    gap: var(--cc-space-lg);
+}
+
+.command-center .cc-row-top {
+    grid-template-columns: 1fr 1.3fr 0.9fr;
+}
+
+.command-center .cc-row-bottom {
+    grid-template-columns: 1fr 1.4fr;
+}
+
+.command-center .cc-card {
+    background: var(--cc-bg-card);
+    border: 1px solid var(--cc-bg-card-border);
+    border-radius: var(--cc-radius-xl);
+    backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.command-center .cc-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.command-center .cc-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-space-md);
+    padding: var(--cc-space-lg);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+.command-center .cc-card-header h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    flex: 1;
+}
+
+.command-center .cc-card-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.command-center .cc-status-icon { background: rgba(34, 211, 238, 0.12); color: var(--cc-accent-cyan); }
+.command-center .cc-heartrate-icon { background: rgba(244, 63, 94, 0.12); color: var(--cc-accent-red); }
+.command-center .cc-emergency-icon { background: rgba(251, 146, 60, 0.12); color: var(--cc-accent-orange); }
+.command-center .cc-message-icon { background: rgba(99, 102, 241, 0.12); color: var(--cc-accent-blue); }
+.command-center .cc-map-icon { background: rgba(52, 211, 153, 0.12); color: var(--cc-accent-green); }
+
+.command-center .cc-card-body {
+    padding: var(--cc-space-lg);
+    flex: 1;
+}
+
+/* Device Status Card */
+.command-center .cc-big-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--cc-space-md);
+}
+
+.command-center .cc-status-ring {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.command-center .cc-big-status.offline .cc-status-ring {
+    background: rgba(244, 63, 94, 0.08);
+    border: 3px solid rgba(244, 63, 94, 0.3);
+}
+
+.command-center .cc-big-status.online .cc-status-ring {
+    background: rgba(52, 211, 153, 0.08);
+    border: 3px solid rgba(52, 211, 153, 0.4);
+    animation: ccStatusPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes ccStatusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.2); }
+    50% { box-shadow: 0 0 0 12px rgba(52, 211, 153, 0); }
+}
+
+.command-center .cc-status-ring-inner {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.command-center .cc-big-status.offline .cc-status-ring-inner {
+    background: var(--cc-accent-red);
+}
+
+.command-center .cc-big-status.online .cc-status-ring-inner {
+    background: var(--cc-accent-green);
+    animation: ccInnerPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ccInnerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.command-center .cc-status-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.command-center .cc-big-status.offline .cc-status-label { color: var(--cc-accent-red); }
+.command-center .cc-big-status.online .cc-status-label { color: var(--cc-accent-green); }
+
+.command-center .cc-detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.command-center .cc-detail-label { font-size: 0.8rem; color: var(--cc-text-muted); }
+.command-center .cc-detail-value { font-size: 0.82rem; color: var(--cc-text-primary); font-weight: 500; }
+
+/* Heart Rate Card */
+.command-center .cc-hr-value {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cc-accent-red), #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.command-center .cc-hr-status {
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.command-center .cc-hr-status.normal {
+    background: rgba(52, 211, 153, 0.12);
+    color: var(--cc-accent-green);
+}
+
+.command-center .cc-hr-status.elevated {
+    background: rgba(251, 146, 60, 0.12);
+    color: var(--cc-accent-orange);
+}
+
+.command-center .cc-hr-status.critical {
+    background: rgba(244, 63, 94, 0.12);
+    color: var(--cc-accent-red);
+}
+
+.command-center .cc-hr-chart {
+    width: 100%;
+    height: 120px;
+    border-radius: var(--cc-radius-md);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Emergency Card */
+.command-center .cc-emergency-btn {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #e11d48, var(--cc-accent-red));
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: transform 0.2s;
+}
+
+.command-center .cc-emergency-btn:hover { transform: scale(1.05); }
+.command-center .cc-emergency-btn.activated { background: linear-gradient(135deg, #991b1b, #b91c1c); }
+
+/* Fall Detection */
+.command-center .cc-fall-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--cc-space-md);
+    padding: var(--cc-space-md);
+    border-radius: var(--cc-radius-md);
+}
+
+.command-center .cc-fall-indicator.safe {
+    background: rgba(52, 211, 153, 0.06);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.command-center .cc-fall-indicator.danger {
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+/* Messages */
+.command-center .cc-messages-list {
+    height: 280px;
+    overflow-y: auto;
+    padding: var(--cc-space-md);
+}
+
+.command-center .cc-message-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.command-center .cc-message-item.incoming {
+    background: rgba(99, 102, 241, 0.06);
+    border-left: 3px solid var(--cc-accent-blue);
+}
+
+.command-center .cc-message-item.outgoing {
+    background: rgba(52, 211, 153, 0.06);
+    border-left: 3px solid var(--cc-accent-green);
+}
+
+.command-center .cc-message-item.system {
+    background: rgba(251, 146, 60, 0.06);
+    border-left: 3px solid var(--cc-accent-orange);
+}
+
+.command-center .cc-message-item.error {
+    background: rgba(244, 63, 94, 0.06);
+    border-left: 3px solid var(--cc-accent-red);
+}
+
+/* Map */
+.command-center .cc-map-container {
+    width: 100%;
+    height: 300px;
+    border-radius: var(--cc-radius-md);
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.command-center .cc-fall-banner {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    padding: 10px var(--cc-space-lg);
+    color: white;
+    font-weight: 700;
+    margin-bottom: var(--cc-space-md);
+}
+
+/* Toast */
+.command-center .cc-toast {
+    padding: 12px 20px;
+    border-radius: var(--cc-radius-md);
+    font-size: 0.85rem;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 2000;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .command-center .cc-row-top { grid-template-columns: 1fr 1fr; }
+    .command-center .cc-card-emergency { grid-column: 1 / -1; }
+}
+
+@media (max-width: 900px) {
+    .command-center .cc-row-top,
+    .command-center .cc-row-bottom { grid-template-columns: 1fr; }
+}
